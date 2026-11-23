@@ -23,6 +23,19 @@ class Vivienda extends Model
         return ['habitantes' => 'integer', 'tarifa_m3' => 'decimal:2'];
     }
 
+    public static function alcaldiaPorCodigoPostal(string $codigoPostal): ?string
+    {
+        if (preg_match('/\A[0-9]{5}\z/', $codigoPostal) !== 1) {
+            return null;
+        }
+
+        $zona = config('codigos_postales.cp'.substr($codigoPostal, 0, 2));
+
+        return $zona !== null && in_array(substr($codigoPostal, 2), $zona['sufijos'], true)
+            ? $zona['alcaldia']
+            : null;
+    }
+
     public function usuarios(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'vivienda_usuario', 'vivienda_id', 'user_id')

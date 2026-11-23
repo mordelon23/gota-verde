@@ -3,21 +3,20 @@
 @section('titulo', 'Registrar hábito')
 
 @section('contenido')
-<div class="max-w-3xl">
-    <a href="{{ route('dashboard') }}" class="mb-5 inline-flex text-sm font-semibold text-[#2E7D6B] hover:underline">← Volver al dashboard</a>
+<div class="gv-registration">
     <section class="gv-card">
         <div class="gv-header" style="margin-bottom:8px">
             <p class="text-xs font-bold uppercase tracking-widest text-[#2E7D6B]">Vivienda: {{ $vivienda->alias }}</p>
             @include('partials.selector-vivienda', ['destino' => 'habitos'])
         </div>
         <h1 class="mb-2 text-2xl font-bold text-[#182d2b]">Registrar un hábito</h1>
-        <p class="mb-8 text-sm text-slate-600" style="margin-bottom:24px">Elige la actividad, indica la cantidad y guarda. Verás los litros antes de guardar.</p>
+        <p class="mb-8 text-sm text-slate-600" style="margin-bottom:24px">Anota una actividad que ya hiciste en esta vivienda. Por ejemplo, si te bañaste durante 7 minutos, elige Ducha e indica 7. GotaVerde calcula los litros.</p>
         @if ($actividades->isEmpty())
             <div class="rounded-xl bg-amber-50 p-5 text-sm leading-7 text-amber-900">
                 No hay actividades disponibles. Ejecuta <code class="rounded bg-amber-100 px-2 py-1">php artisan db:seed --class=ActividadInicialSeeder</code> en la terminal del proyecto.
             </div>
         @else
-            <form method="POST" action="{{ route('habitos.store') }}" class="space-y-5">
+            <form method="POST" action="{{ route('habitos.store') }}" class="space-y-5" @unless(session('duplicado')) data-limpiar-formulario @endunless autocomplete="off">
                 @csrf
                 @if (session('duplicado'))
                     @php($dup = session('duplicado'))
@@ -79,10 +78,13 @@
                     };
                     actividad.addEventListener('change', mostrar);
                     cantidad.addEventListener('input', mostrar);
+                    actividad.form.addEventListener('reset', () => requestAnimationFrame(mostrar));
                     mostrar();
                 })();
             </script>
         @endif
+        <div class="gv-return"><a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a></div>
     </section>
+    @include('partials.recompensas')
 </div>
 @endsection

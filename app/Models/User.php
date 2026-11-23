@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 // 'rol' y 'puntos' NO son asignables masivamente a propósito:
 // así nadie puede volverse admin enviando un campo extra en un formulario.
@@ -50,6 +51,13 @@ class User extends Authenticatable
     public function nivel(): int
     {
         return intdiv((int) $this->puntos, self::PUNTOS_POR_NIVEL) + 1;
+    }
+
+    public function iniciales(): string
+    {
+        return Str::of($this->name)->squish()->explode(' ')->take(2)
+            ->map(fn (string $nombre): string => Str::upper(Str::substr($nombre, 0, 1)))
+            ->implode('');
     }
 
     public function viviendas(): BelongsToMany

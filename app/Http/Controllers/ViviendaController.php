@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ViviendaController extends Controller
@@ -63,7 +64,7 @@ class ViviendaController extends Controller
     {
         Gate::authorize('update', $vivienda);
 
-        $vivienda->update($this->validar($request));
+        $vivienda->update($this->validar($request, $vivienda));
 
         return redirect()->route('viviendas.index')->with('exito', 'Perfil de la vivienda actualizado. Los cálculos usan la nueva tarifa.');
     }
@@ -99,19 +100,39 @@ class ViviendaController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function validar(Request $request): array
+    private function validar(Request $request, ?Vivienda $vivienda = null): array
     {
         $datos = $request->validate([
             'alias' => ['required', 'string', 'max:100'],
             'tipo' => ['required', 'in:Casa,Departamento,Otro'],
             'habitantes' => ['required', 'integer', 'min:1', 'max:30'],
-            'alcaldia' => ['required', 'string', 'max:100'],
-            'codigo_postal' => ['required', 'regex:/^[0-9]{5}$/'],
+            'alcaldia' => ['nullable', 'string'],
+            'codigo_postal' => ['required', 'string', 'regex:/^[0-9]{5}$/'],
             'tarifa_m3' => ['nullable', 'numeric', 'min:0', 'max:10000'],
         ], [
             'codigo_postal.regex' => 'El código postal debe tener 5 dígitos.',
             'tarifa_m3.numeric' => 'La tarifa debe ser un número.',
         ]);
+
+        $alcaldia = Vivienda::alcaldiaPorCodigoPostal($datos['codigo_postal']);
+
+        if ($alcaldia === null && $vivienda?->codigo_postal === $datos['codigo_postal']) {
+            $alcaldia = $vivienda->alcaldia;
+        }
+
+        if ($alcaldia === null) {
+            throw ValidationException::withMessages([
+                'codigo_postal' => 'Este código postal no está en el catálogo de la Ciudad de México.',
+            ]);
+        }
+
+        if (isset($datos['alcaldia']) && $datos['alcaldia'] !== $alcaldia) {
+            throw ValidationException::withMessages([
+                'alcaldia' => 'La alcaldía correspondiente a este código postal es '.$alcaldia.'.',
+            ]);
+        }
+
+        $datos['alcaldia'] = $alcaldia;
         $datos['tarifa_m3'] = $datos['tarifa_m3'] ?? 0;
 
         return $datos;

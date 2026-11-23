@@ -9,7 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * DS-05: correo de invitación, enviado mediante la cola.
+ * DS-05: plantilla de correo de invitación.
  */
 class InvitacionAVivienda extends Notification implements ShouldQueue
 {

@@ -12,6 +12,7 @@ use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\LogroController;
 use App\Http\Controllers\MetaController;
 use App\Http\Controllers\MiembroController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\RegistroHabitoController;
 use App\Http\Controllers\ViviendaController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,14 @@ Route::get('/invitaciones/{token}', [InvitacionController::class, 'mostrar'])->n
 Route::middleware('auth')->group(function (): void {
     Route::post('/salir', [SesionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/invitaciones', [InvitacionController::class, 'recibidas'])->name('invitaciones.recibidas');
+    Route::post('/invitaciones/enlace', [InvitacionController::class, 'abrirEnlace'])->name('invitaciones.enlace');
+    Route::post('/invitaciones/recibidas/{invitacion}/aceptar', [InvitacionController::class, 'aceptarRecibida'])
+        ->whereNumber('invitacion')->name('invitaciones.recibidas.aceptar');
+    Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
+    Route::patch('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::get('/perfil/foto', [PerfilController::class, 'foto'])->name('perfil.foto');
+    Route::delete('/perfil/foto', [PerfilController::class, 'eliminarFoto'])->name('perfil.foto.destroy');
 
     // Viviendas (RF-14, RF-15, RF-16).
     Route::get('/viviendas', [ViviendaController::class, 'index'])->name('viviendas.index');

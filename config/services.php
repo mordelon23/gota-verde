@@ -22,6 +22,15 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'recompensas' => [
+        'empresas' => [
+            'gota_bronce' => env('RECOMPENSA_GOTA_BRONCE_EMPRESA'),
+            'gota_plata' => env('RECOMPENSA_GOTA_PLATA_EMPRESA'),
+            'gota_oro' => env('RECOMPENSA_GOTA_ORO_EMPRESA'),
+            'guardian_agua' => env('RECOMPENSA_GUARDIAN_AGUA_EMPRESA'),
+        ],
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

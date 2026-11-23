@@ -23,9 +23,13 @@ class MiembroController extends Controller
 
         $resultado = $invitaciones->invitar($vivienda, $request->user(), $datos['email']);
 
+        $mensaje = $resultado['correoEnviado']
+            ? 'Invitación enviada a '.$resultado['invitacion']->email.'. Vence en '.Invitacion::VIGENCIA_HORAS.' horas.'
+            : 'Invitación creada. La otra persona puede aceptarla en Invitaciones o usar el enlace que le compartas.';
+
         // El enlace solo se puede mostrar ahora: en la base se guarda únicamente su hash.
         return back()
-            ->with('exito', 'Invitación enviada a '.$resultado['invitacion']->email.'. Vence en '.Invitacion::VIGENCIA_HORAS.' horas.')
+            ->with('exito', $mensaje)
             ->with('enlace_invitacion', $resultado['enlace']);
     }
 
@@ -34,7 +38,7 @@ class MiembroController extends Controller
         Gate::authorize('gestionarMiembros', $vivienda);
         abort_unless($invitacion->vivienda_id === $vivienda->id, 404);
 
-        $invitacion->update(['estado' => 'cancelada']);
+        Invitacion::query()->whereKey($invitacion->id)->where('estado', 'pendiente')->update(['estado' => 'cancelada']);
 
         return back()->with('exito', 'Invitación cancelada.');
     }

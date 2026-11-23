@@ -17,11 +17,31 @@ it('GotaVerde registra cuentas con contraseñas protegidas', function (): void {
         'email' => 'demo@example.test',
         'password' => 'ClaveSegura123!',
         'password_confirmation' => 'ClaveSegura123!',
-    ])->assertRedirect(route('viviendas.create'));
+    ])->assertRedirect(route('viviendas.create'))->assertSessionHas('guia_primer_uso', true);
 
     $this->assertAuthenticated();
     $this->assertDatabaseHas('users', ['email' => 'demo@example.test']);
     expect(User::where('email', 'demo@example.test')->first()->password)->not->toBe('ClaveSegura123!');
+
+    $this->get(route('viviendas.create'))
+        ->assertOk()
+        ->assertSee('Te damos la bienvenida a GotaVerde')
+        ->assertSee('Omitir guía');
+
+    $this->get(route('viviendas.create'))
+        ->assertOk()
+        ->assertDontSee('Te damos la bienvenida a GotaVerde');
+});
+
+it('devuelve a la persona a su invitación al crear una cuenta', function (): void {
+    $enlace = route('invitaciones.mostrar', 'token-de-prueba');
+
+    $this->withSession(['url.intended' => $enlace])->post(route('register.store'), [
+        'name' => 'Persona Invitada',
+        'email' => 'invitada@example.test',
+        'password' => 'ClaveSegura123!',
+        'password_confirmation' => 'ClaveSegura123!',
+    ])->assertRedirect($enlace)->assertSessionMissing('guia_primer_uso');
 });
 
 it('GotaVerde crea una vivienda y asigna al creador como propietario', function (): void {

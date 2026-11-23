@@ -37,11 +37,24 @@ class MetaController extends Controller
             ->get()
             ->map(fn (Meta $meta) => ['meta' => $meta, 'avance' => $metas->avance($meta)]);
 
+        $actividades = Actividad::where('activa', true)->orderBy('nombre')->get();
+        $habito = $request->integer('habito');
+        $actividadId = $habito > 0 ? $vivienda->registros()->whereKey($habito)->value('actividad_id') : null;
+        $actividadSugerida = $actividades->find($actividadId);
+        $sugerencia = $actividadSugerida ? [
+            'tipo' => Meta::CUALITATIVA,
+            'titulo' => 'Mejorar: '.$actividadSugerida->nombre,
+            'actividad_id' => $actividadSugerida->id,
+            'limite_cantidad' => min(1000, max(0.1, (float) $actividadSugerida->referencia_eficiente)),
+            'duracion_dias' => 4,
+        ] : [];
+
         return view('metas.index', [
             'viviendas' => $viviendas,
             'vivienda' => $vivienda,
             'metas' => $lista,
-            'actividades' => Actividad::where('activa', true)->orderBy('nombre')->get(),
+            'actividades' => $actividades,
+            'sugerencia' => $sugerencia,
             'tieneConsumoBase' => $vivienda->lecturas()->exists(),
         ]);
     }
@@ -52,6 +65,7 @@ class MetaController extends Controller
         abort_unless($vivienda, 404);
         Gate::authorize('registrar', $vivienda);
 
+        $calcularFechas = $request->has('duracion_dias');
         $datos = $request->validate([
             'tipo' => ['required', Rule::in([Meta::CUANTITATIVA, Meta::CUALITATIVA])],
             'titulo' => ['required', 'string', 'max:120'],
@@ -61,15 +75,32 @@ class MetaController extends Controller
             ],
             'objetivo_litros' => ['exclude_unless:tipo,cuantitativa', 'required', 'numeric', 'min:1', 'max:1000000'],
             'limite_cantidad' => ['exclude_unless:tipo,cualitativa', 'required', 'numeric', 'min:0.1', 'max:1000'],
-            'dias_objetivo' => ['exclude_unless:tipo,cualitativa', 'required', 'integer', 'min:1', 'max:366'],
+            'dias_objetivo' => [Rule::excludeIf($calcularFechas), 'exclude_unless:tipo,cualitativa', 'required', 'integer', 'min:1', 'max:366'],
+            'duracion_dias' => ['sometimes', 'required', 'integer', 'min:1', 'max:366'],
             'fecha_inicio' => ['required', 'date_format:Y-m-d'],
-            'fecha_fin' => ['required', 'date_format:Y-m-d', 'after_or_equal:fecha_inicio', 'after_or_equal:today'],
+            'fecha_fin' => [Rule::excludeIf($calcularFechas), 'required', 'date_format:Y-m-d', 'after_or_equal:fecha_inicio', 'after_or_equal:today'],
         ], [
             'fecha_fin.after_or_equal' => 'La fecha de fin no puede ser anterior a la de inicio ni a hoy.',
             'actividad_id.required' => 'Las metas cualitativas necesitan una actividad.',
         ]);
 
-        if (($datos['tipo'] === Meta::CUALITATIVA)) {
+        if ($calcularFechas) {
+            $duracion = (int) $datos['duracion_dias'];
+            $fin = Carbon::parse($datos['fecha_inicio'])->addDays($duracion - 1);
+
+            if ($fin->isBefore(today())) {
+                throw ValidationException::withMessages([
+                    'fecha_inicio' => 'El periodo termina antes de hoy. Cambia la fecha de inicio o la cantidad de días.',
+                ]);
+            }
+
+            $datos['fecha_fin'] = $fin->toDateString();
+            unset($datos['duracion_dias']);
+
+            if ($datos['tipo'] === Meta::CUALITATIVA) {
+                $datos['dias_objetivo'] = $duracion;
+            }
+        } elseif ($datos['tipo'] === Meta::CUALITATIVA) {
             $diasDelPeriodo = Carbon::parse($datos['fecha_inicio'])->diffInDays(Carbon::parse($datos['fecha_fin'])) + 1;
 
             if ($datos['dias_objetivo'] > $diasDelPeriodo) {

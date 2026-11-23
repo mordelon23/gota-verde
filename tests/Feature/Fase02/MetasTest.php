@@ -68,6 +68,26 @@ it('no permite dos metas activas iguales ni fechas inválidas (CU-10)', function
         ->assertSessionHasErrors('fecha_fin');
 });
 
+it('calcula la fecha de fin con la duración capturada y cuenta el día de inicio', function (): void {
+    $usuario = User::factory()->create();
+    $vivienda = viviendaDe($usuario);
+    $inicio = today()->endOfMonth();
+    $datos = [
+        'tipo' => 'cuantitativa', 'titulo' => 'Ahorrar agua', 'objetivo_litros' => 50,
+        'fecha_inicio' => $inicio->toDateString(), 'duracion_dias' => 2,
+        'fecha_fin' => $inicio->copy()->addDays(20)->toDateString(),
+    ];
+
+    $this->actingAs($usuario)->post(route('metas.store'), [...$datos, 'duracion_dias' => 0])
+        ->assertSessionHasErrors('duracion_dias');
+    $this->post(route('metas.store'), [...$datos, 'fecha_inicio' => today()->subDays(3)->toDateString()])
+        ->assertSessionHasErrors('fecha_inicio');
+    $this->post(route('metas.store'), $datos)->assertRedirect(route('metas.index'));
+
+    expect($vivienda->metas()->sole()->fecha_fin->toDateString())
+        ->toBe($inicio->copy()->addDay()->toDateString());
+});
+
 it('el cierre diario vence metas, reinicia rachas y expira invitaciones (CU-19)', function (): void {
     $usuario = User::factory()->create();
     $vivienda = viviendaDe($usuario);

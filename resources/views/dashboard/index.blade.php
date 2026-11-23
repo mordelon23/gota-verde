@@ -1,11 +1,40 @@
 @extends('layouts.app')
-@section('titulo','Dashboard')
+@section('titulo','Panel principal')
 @section('contenido')
+@include('dashboard.invitaciones')
 @if(!$vivienda)
-<header class="gv-header"><div><h1>Hola, {{ auth()->user()->name }}</h1></div></header>
-<section class="gv-card gv-empty"><h2>Registra tu primera vivienda</h2><p>Necesitas una vivienda para comenzar a registrar hábitos. Si alguien te invitó, abre el enlace de su invitación.</p><a class="gv-btn" style="margin-top:15px" href="{{ route('viviendas.create') }}">Registrar vivienda</a></section>
+<header class="gv-header">
+    <h1>Hola, {{ auth()->user()->name }}</h1>
+    @include('partials.avatar', ['usuario' => auth()->user()])
+</header>
+@include('dashboard.primeros-pasos', [
+    'paso' => 1,
+    'tituloPaso' => 'Registra tu vivienda',
+    'descripcionPaso' => 'Empieza por el lugar donde quieres llevar el control del agua. Ten a la mano su código postal. Si alguien te invitó a su vivienda, abre el enlace de la invitación.',
+    'accionPaso' => 'Registrar vivienda',
+    'enlacePaso' => route('viviendas.create'),
+])
 @else
 @include('dashboard._cabecera')
+@if($registros->isEmpty())
+    @include('dashboard.primeros-pasos', [
+        'paso' => 2,
+        'tituloPaso' => 'Anota tu primer hábito',
+        'descripcionPaso' => 'Registra algo que ya hiciste en casa. Por ejemplo, elige Ducha y escribe cuántos minutos duró. GotaVerde estima los litros que usaste.',
+        'accionPaso' => 'Registrar un hábito',
+        'enlacePaso' => route('habitos.create'),
+    ])
+@elseif($mostrarPrimeraMeta)
+    @include('dashboard.primeros-pasos', [
+        'paso' => 3,
+        'tituloPaso' => 'Crea una meta con ese hábito',
+        'descripcionPaso' => $habitoParaMeta
+            ? 'Usa «'.$habitoParaMeta->actividad->nombre.'» como punto de partida. Te proponemos un límite por registro y cuántos días intentar cumplirlo.'
+            : 'Elige algo que quieras cambiar. Puedes fijar un límite para una actividad o un objetivo en litros ahorrados.',
+        'accionPaso' => 'Crear mi primera meta',
+        'enlacePaso' => route('metas.index', $habitoParaMeta ? ['habito' => $habitoParaMeta->id] : []).'#nueva-meta',
+    ])
+@endif
 <div class="gv-grid">
 <article class="gv-card"><p class="gv-label">Litros consumidos (semana)</p><p class="gv-metric" style="color:#2B8BC6">{{ number_format($litrosSemana,2) }} L</p><p class="gv-label">Consumo estimado de la vivienda</p></article>
 <article class="gv-card"><p class="gv-label">Agua ahorrada (semana)</p><p class="gv-metric" style="color:#5FA35A">{{ number_format($ahorradosSemana,2) }} L</p><p class="gv-label">Acumulado: {{ number_format($ahorroAcumulado,2) }} L</p></article>

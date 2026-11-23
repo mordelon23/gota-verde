@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Recompensa;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as BladeView;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer('partials.recompensas', function (BladeView $vista): void {
+            $vista->with([
+                'recompensas' => Recompensa::query()->orderBy('puntos_requeridos')->get(),
+                'empresas' => array_filter(config('services.recompensas.empresas', [])),
+            ]);
+        });
+
         // RF-03: correo de recuperación de contraseña en español.
         ResetPassword::toMailUsing(function (object $usuario, string $token): MailMessage {
             $enlace = route('password.reset', ['token' => $token, 'email' => $usuario->getEmailForPasswordReset()]);

@@ -27,6 +27,41 @@ it('muestra el dashboard individual de la vivienda activa (RF-12, RF-13)', funct
         ->assertSee('$10.00');
 });
 
+it('guía desde la primera vivienda hasta guardar una meta basada en un hábito', function (): void {
+    $usuario = User::factory()->create();
+
+    $this->actingAs($usuario)->get(route('dashboard'))
+        ->assertSee('Paso 1 de 3')
+        ->assertSee('Registra tu vivienda');
+
+    $vivienda = viviendaDe($usuario);
+    $actividad = ducha();
+    $this->get(route('dashboard'))->assertSee('Paso 2 de 3')->assertSee('Anota tu primer hábito');
+
+    $this->post(route('habitos.store'), ['actividad_id' => $actividad->id, 'cantidad' => 7, 'fecha' => today()->toDateString()])
+        ->assertRedirect(route('dashboard'));
+    $habito = $vivienda->registros()->sole();
+    $enlaceMeta = route('metas.index', ['habito' => $habito->id]);
+
+    $this->get(route('dashboard'))->assertSee('Paso 3 de 3')->assertSee($enlaceMeta.'#nueva-meta');
+
+    $respuesta = $this->get($enlaceMeta)->assertOk()->assertSee('Este ejemplo usa un hábito de tu vivienda.');
+    $sugerencia = $respuesta->viewData('sugerencia');
+    expect($sugerencia)->toMatchArray([
+        'tipo' => 'cualitativa', 'actividad_id' => $actividad->id, 'limite_cantidad' => 5.0, 'duracion_dias' => 4,
+    ]);
+
+    $this->get(route('metas.index', ['habito' => $habito->id + 1]))->assertViewHas('sugerencia', []);
+
+    $this->post(route('metas.store'), [...$sugerencia, 'fecha_inicio' => today()->toDateString()])
+        ->assertRedirect(route('metas.index'));
+    $meta = $vivienda->metas()->sole();
+    expect($meta->actividad_id)->toBe($actividad->id)
+        ->and($meta->dias_objetivo)->toBe(4)
+        ->and($meta->fecha_fin->toDateString())->toBe(today()->addDays(3)->toDateString());
+    $this->get(route('dashboard'))->assertDontSee('Paso 3 de 3');
+});
+
 it('suma todas las viviendas en el dashboard global con la tarifa de cada una (RF-19)', function (): void {
     $usuario = User::factory()->create();
     $casa = viviendaDe($usuario, 'propietario', ['alias' => 'Casa', 'tarifa_m3' => 20]);

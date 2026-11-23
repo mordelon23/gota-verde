@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('titulo','Dashboard global')
 @section('contenido')
+@include('dashboard.invitaciones')
 @include('dashboard._cabecera')
 <div class="gv-grid">
 <article class="gv-card"><p class="gv-label">Viviendas</p><p class="gv-metric">{{ $porVivienda->count() }}</p><p class="gv-label">Donde eres propietario o miembro</p></article>

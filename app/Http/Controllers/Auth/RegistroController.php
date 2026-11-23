@@ -37,7 +37,11 @@ class RegistroController extends Controller
         Auth::login($usuario);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('viviendas.create'))
-            ->with('exito', 'Tu cuenta se creó correctamente. Registra tu primera vivienda.');
+        if ($request->session()->has('url.intended')) {
+            return redirect()->intended(route('viviendas.create'))
+                ->with('exito', 'Tu cuenta se creó correctamente.');
+        }
+
+        return redirect()->route('viviendas.create')->with('guia_primer_uso', true);
     }
 }
