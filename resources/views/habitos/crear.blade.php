@@ -15,6 +15,7 @@
             <div class="rounded-xl bg-amber-50 p-5 text-sm leading-7 text-amber-900">
                 No hay actividades disponibles. Ejecuta <code class="rounded bg-amber-100 px-2 py-1">php artisan db:seed --class=ActividadInicialSeeder</code> en la terminal del proyecto.
             </div>
+            <div class="gv-return gv-actions-between"><a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a></div>
         @else
             <form method="POST" action="{{ route('habitos.store') }}" class="space-y-5" @unless(session('duplicado')) data-limpiar-formulario @endunless autocomplete="off">
                 @csrf
@@ -23,7 +24,7 @@
                     {{-- CU-09 5a: ya existe un registro de la misma actividad ese día --}}
                     <div class="gv-confirm" role="alert">
                         <p class="mb-3 text-sm">Ya registraste <strong>{{ $dup['actividad'] }}</strong> ese día ({{ $dup['cantidad'] }} {{ $dup['unidad'] }}{{ $dup['cantidad'] != 1 ? 's' : '' }}). ¿Qué quieres hacer?</p>
-                        <div class="gv-row">
+                        <div class="gv-actions">
                             <button type="submit" name="duplicado" value="sumar" class="gv-btn sm">Sumarlo al registro existente</button>
                             <button type="submit" name="duplicado" value="separado" class="gv-btn sm alt">Guardar como registro aparte</button>
                         </div>
@@ -55,7 +56,10 @@
                 <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-slate-700">
                     <strong>¿Cómo calculamos los litros?</strong> Multiplicamos la cantidad por los litros de referencia de la actividad (por ejemplo, ducha: 10 L/min, así que 10 minutos son 100 litros). Si usas menos que la referencia eficiente, la diferencia cuenta como ahorro. El consumo real depende de tus llaves y de la presión del agua.
                 </div>
-                <button type="submit" class="gv-btn w-full">Guardar hábito</button>
+                <div class="gv-actions gv-actions-between">
+                    <a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a>
+                    <button type="submit" class="gv-btn gv-right">Guardar hábito</button>
+                </div>
             </form>
             <script>
                 (() => {
@@ -83,7 +87,6 @@
                 })();
             </script>
         @endif
-        <div class="gv-return"><a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a></div>
     </section>
     @include('partials.recompensas')
 </div>

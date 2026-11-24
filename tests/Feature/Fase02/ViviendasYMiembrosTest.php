@@ -124,6 +124,7 @@ it('conserva el enlace anterior cuando Resend rechaza el nuevo correo', function
     $propietario = User::factory()->create();
     $vivienda = viviendaDe($propietario);
     $email = ['email' => 'primo@example.test'];
+    User::factory()->create($email);
     $this->actingAs($propietario)->post(route('viviendas.invitar', $vivienda), $email)
         ->assertSessionHas('exito', 'Invitación creada. La otra persona puede aceptarla en Invitaciones o usar el enlace que le compartas.');
     $invitacion = $vivienda->invitaciones()->sole();
@@ -177,6 +178,7 @@ it('rechaza invitaciones expiradas o aceptadas por otra cuenta', function (): vo
     config(['services.resend.key' => null]);
     $propietario = User::factory()->create();
     $vivienda = viviendaDe($propietario);
+    $primo = User::factory()->create(['email' => 'primo@example.test']);
     $this->actingAs($propietario)->post(route('viviendas.invitar', $vivienda), ['email' => 'primo@example.test']);
     $token = basename(session('enlace_invitacion'));
 
@@ -184,10 +186,24 @@ it('rechaza invitaciones expiradas o aceptadas por otra cuenta', function (): vo
     $this->actingAs($otro)->post(route('invitaciones.aceptar', $token))->assertSessionHasErrors('invitacion');
     expect($vivienda->esMiembro($otro))->toBeFalse();
 
-    $primo = User::factory()->create(['email' => 'primo@example.test']);
     $this->travel(73)->hours();
     $this->actingAs($primo)->post(route('invitaciones.aceptar', $token))->assertSessionHasErrors('invitacion');
     expect($vivienda->esMiembro($primo))->toBeFalse();
+});
+
+it('rechaza correos sin cuenta antes de guardar o enviar la invitación', function (): void {
+    config(['services.resend.key' => 'clave-de-prueba']);
+    Http::fake();
+    $propietario = User::factory()->create();
+    $vivienda = viviendaDe($propietario);
+
+    $this->actingAs($propietario)
+        ->post(route('viviendas.invitar', $vivienda), ['email' => 'sin-cuenta@example.test'])
+        ->assertSessionHasErrors(['email' => 'No encontramos una cuenta registrada con ese correo. Pídele a la persona que cree su cuenta antes de invitarla.'])
+        ->assertSessionMissing('enlace_invitacion');
+
+    expect($vivienda->invitaciones()->exists())->toBeFalse();
+    Http::assertNothingSent();
 });
 
 it('no invita a quien ya es miembro y solo el propietario puede invitar', function (): void {
@@ -210,7 +226,9 @@ it('el propietario elimina miembros y un miembro puede salir (RF-22)', function 
     $vivienda->usuarios()->attach([$uno->id => ['rol' => 'miembro'], $dos->id => ['rol' => 'miembro']]);
 
     $this->actingAs($propietario)->delete(route('viviendas.miembros.eliminar', [$vivienda, $uno]))->assertSessionHas('exito');
-    $this->actingAs($dos)->post(route('viviendas.salir', $vivienda))->assertRedirect(route('viviendas.index'));
+    $this->actingAs($dos)->post(route('viviendas.salir', $vivienda))
+        ->assertStatus(303)
+        ->assertHeader('Location', route('viviendas.index', absolute: false));
 
     expect($vivienda->usuarios()->count())->toBe(1);
 
@@ -229,3 +247,23 @@ it('elimina la vivienda solo al confirmar el alias', function (): void {
 
     $this->assertModelMissing($vivienda);
 });
+
+
+it('conserva la sesion y muestra solo las viviendas restantes al abandonar una vivienda', function (bool $tieneOtraVivienda): void {
+    $usuario = User::factory()->create();
+    $vivienda = viviendaDe(User::factory()->create(), datos: ['alias' => 'Vivienda anterior']);
+    $vivienda->usuarios()->attach($usuario->id, ['rol' => 'miembro']);
+    $otra = $tieneOtraVivienda ? viviendaDe($usuario, datos: ['alias' => 'Vivienda restante']) : null;
+
+    $this->actingAs($usuario)
+        ->withSession(['vivienda_activa_id' => $vivienda->id])
+        ->post(route('viviendas.salir', $vivienda))
+        ->assertSessionMissing('vivienda_activa_id');
+
+    $this->assertAuthenticatedAs($usuario);
+    $this->get(route('viviendas.index'))
+        ->assertOk()
+        ->assertSee('Ya no perteneces a la vivienda «Vivienda anterior».')
+        ->assertViewHas('viviendas', fn ($viviendas) => $viviendas->modelKeys() === ($otra ? [$otra->id] : []))
+        ->assertViewHas('vivienda', fn ($activa) => $activa?->id === $otra?->id);
+})->with([true, false]);

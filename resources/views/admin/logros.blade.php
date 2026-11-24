@@ -13,5 +13,5 @@
 <div class="gv-field"><label for="descripcion">Descripción</label><input id="descripcion" name="descripcion" required maxlength="255" value="{{ old('descripcion',$l?->descripcion) }}"></div>
 <div class="gv-field"><label for="criterio">Criterio</label><select id="criterio" name="criterio" required>@foreach(\App\Models\Logro::CRITERIOS as $valor=>$texto)<option value="{{ $valor }}" @selected(old('criterio',$l?->criterio)===$valor)>{{ $texto }}</option>@endforeach</select></div>
 <div class="gv-forms"><div class="gv-field"><label for="umbral">Umbral</label><input id="umbral" name="umbral" type="number" min="1" required value="{{ old('umbral',$l?->umbral) }}"></div><div class="gv-field"><label for="puntos">Puntos</label><input id="puntos" name="puntos" type="number" min="0" required value="{{ old('puntos',$l?->puntos ?? 10) }}"></div></div>
-<div class="gv-row"><button class="gv-btn" type="submit">{{ $l ? 'Guardar cambios' : 'Agregar logro' }}</button>@if($l)<a class="gv-btn alt" href="{{ route('admin.logros.index') }}">Cancelar</a>@endif</div></form></section></div>
+<div class="gv-actions"><button class="gv-btn" type="submit">{{ $l ? 'Guardar cambios' : 'Agregar logro' }}</button>@if($l)<a class="gv-btn alt" href="{{ route('admin.logros.index') }}">Cancelar</a>@endif</div></form></section></div>
 @endsection

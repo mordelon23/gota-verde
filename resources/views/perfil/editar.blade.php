@@ -49,7 +49,7 @@
 
     <section class="gv-card gv-profile-help">
         <h2>Ayuda para empezar</h2>
-        <button class="gv-btn alt" type="button" data-abrir-guia aria-controls="guia-primer-uso" aria-haspopup="dialog">Ver guía de inicio</button>
+        <div class="gv-actions"><button class="gv-btn alt" type="button" data-abrir-guia aria-controls="guia-primer-uso" aria-haspopup="dialog">Ver guía de inicio</button></div>
     </section>
 </div>
 @include('partials.guia-primer-uso', ['mostrarAlEntrar' => false])

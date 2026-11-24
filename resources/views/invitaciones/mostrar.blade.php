@@ -7,9 +7,9 @@
 <div class="gv-alert error" style="margin-top:20px">Esta invitación ya no es válida ({{ $invitacion->estado === 'pendiente' ? 'expiró' : $invitacion->estado }}). Pide una nueva al propietario.</div>
 @elseauth
 <p class="gv-note">Se envió a {{ $invitacion->email }}. Vence el {{ $invitacion->expira_en->format('d/m/Y H:i') }}.</p>
-<form method="POST" action="{{ route('invitaciones.aceptar', $token) }}" style="margin-top:20px">@csrf<button class="gv-btn" type="submit">Aceptar invitación</button></form>
+<form method="POST" action="{{ route('invitaciones.aceptar', $token) }}" style="margin-top:20px">@csrf<div class="gv-actions"><button class="gv-btn" type="submit">Aceptar invitación</button></div></form>
 @else
 <p class="gv-note">Para aceptarla, inicia sesión o crea una cuenta con el correo <strong>{{ $invitacion->email }}</strong>. Después volverás a esta página.</p>
-<div style="display:grid;gap:10px;margin-top:20px"><a class="gv-btn" href="{{ route('login') }}">Iniciar sesión</a><a class="gv-btn alt" href="{{ route('register') }}">Crear cuenta</a></div>
+<div class="gv-actions" style="margin-top:20px"><a class="gv-btn" href="{{ route('login') }}">Iniciar sesión</a><a class="gv-btn alt" href="{{ route('register') }}">Crear cuenta</a></div>
 @endif
 @endsection

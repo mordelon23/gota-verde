@@ -42,7 +42,7 @@
         <small class="gv-label" id="ayuda-duracion">El inicio cuenta como el primer día.</small>
     </div>
 </div>
-<button class="gv-btn" style="width:100%" type="submit">Crear meta</button></form>
+<div class="gv-actions"><button class="gv-btn" type="submit">Crear meta</button></div></form>
 <p class="gv-note" data-solo="cuantitativa">El avance suma los litros que GotaVerde estima que ahorraron los miembros con sus hábitos. @unless($tieneConsumoBase)Si quieres comparar consumos de recibos, puedes hacerlo en <a href="{{ route('lecturas.index') }}">Lecturas</a>.@endunless</p>
 <p class="gv-note" data-solo="cualitativa">Un día cuenta si alguien registra la actividad y todos los registros del día respetan el límite.</p>
 <script>

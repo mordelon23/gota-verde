@@ -9,6 +9,32 @@
 <article class="gv-card"><p class="gv-label">Nivel</p><p class="gv-big">{{ $usuario->nivel() }}</p><div class="gv-progress gold"><span style="width:{{ $enNivel / $puntosPorNivel * 100 }}%"></span></div><p class="gv-label">{{ $usuario->puntos }} puntos · faltan {{ $puntosPorNivel - $enNivel }} para el nivel {{ $usuario->nivel() + 1 }}</p></article>
 <article class="gv-card"><p class="gv-label">Próxima recompensa</p>@if($proximaRecompensa)<p class="gv-metric">{{ $proximaRecompensa->icono }} {{ $proximaRecompensa->nombre }}</p><div class="gv-progress gold"><span style="width:{{ min(100, $usuario->puntos / max(1,$proximaRecompensa->puntos_requeridos) * 100) }}%"></span></div><p class="gv-label">{{ $usuario->puntos }} / {{ $proximaRecompensa->puntos_requeridos }} puntos</p>@else<p class="gv-metric">🎉</p><p class="gv-label">¡Obtuviste todas las recompensas!</p>@endif</article>
 </div>
+@if($primerosHitos->isNotEmpty())
+<section class="gv-card" style="margin-bottom:16px">
+    <h2>Primeros hitos</h2>
+    <div class="gv-medals">
+        @foreach($primerosHitos as $fila)
+            @php($hito = $fila['logro'])
+            <article class="gv-medal">
+                <span class="ico" aria-hidden="true">{{ $hito->icono }}</span>
+                <strong>{{ $hito->nombre }}</strong>
+                <small>{{ $hito->descripcion }} · +{{ $hito->puntos }} pts</small>
+                @if($fila['obtenido'])
+                    <small class="gv-pos">Medalla obtenida</small>
+                @elseif($hito->clave === 'racha_3')
+                    @php($dias = min($hito->umbral, $racha?->actual ?? 0))
+                    @php($faltan = $hito->umbral - $dias)
+                    <div class="gv-progress" aria-hidden="true"><span style="width:{{ $dias / max(1, $hito->umbral) * 100 }}%"></span></div>
+                    <small>{{ $dias }} de {{ $hito->umbral }} días consecutivos</small>
+                    <small>{{ $faltan === 1 ? 'Te falta 1 día' : 'Te faltan '.$faltan.' días' }}</small>
+                @else
+                    <small><a href="{{ route('habitos.create') }}">Registrar mi primer hábito</a></small>
+                @endif
+            </article>
+        @endforeach
+    </div>
+</section>
+@endif
 <section class="gv-card" style="margin-bottom:16px"><h2>Medallas</h2><div class="gv-medals">
 @foreach($logros as $fila)@php($logro = $fila['logro'])<div class="gv-medal {{ $fila['obtenido'] ? '' : 'locked' }}" title="{{ $logro->descripcion }}"><span class="ico">{{ $logro->icono }}</span><strong>{{ $logro->nombre }}</strong><small>{{ $logro->descripcion }}</small>@if($fila['obtenido'])<small class="gv-pos">Obtenido el {{ \Illuminate\Support\Carbon::parse($fila['obtenido']->pivot->obtenido_en)->format('d/m/Y') }} · +{{ $logro->puntos }} pts</small>@else<div class="gv-progress"><span style="width:{{ $fila['avance'] }}%"></span></div><small>{{ $fila['avance'] }}% · +{{ $logro->puntos }} pts</small>@endif</div>@endforeach
 </div></section>

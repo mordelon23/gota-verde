@@ -26,11 +26,12 @@ class LogroController extends Controller
         $obtenidos = $usuario->logros()->get()->keyBy('id');
         $valores = $gamificacion->valoresDeUsuario($usuario);
 
-        $logros = Logro::orderBy('criterio')->orderBy('umbral')->get()->map(fn (Logro $logro) => [
+        $logros = Logro::orderBy('criterio')->orderBy('umbral')->get()->keyBy('clave')->map(fn (Logro $logro) => [
             'logro' => $logro,
             'obtenido' => $obtenidos->get($logro->id),
             'avance' => min(100, round(($valores[$logro->criterio] ?? 0) / max(1, $logro->umbral) * 100)),
         ]);
+        $primerosHitos = $logros->only(['primer_registro', 'racha_3'])->sortBy('logro.umbral');
 
         $recompensasObtenidas = $usuario->recompensas()->pluck('recompensas.id');
         $proximaRecompensa = Recompensa::whereNotIn('id', $recompensasObtenidas)->orderBy('puntos_requeridos')->first();
@@ -40,7 +41,8 @@ class LogroController extends Controller
             'vivienda' => $vivienda,
             'racha' => $racha,
             'mejorRachaGlobal' => (int) Racha::where('user_id', $usuario->id)->max('mejor'),
-            'logros' => $logros,
+            'primerosHitos' => $primerosHitos,
+            'logros' => $logros->except($primerosHitos->keys()->all()),
             'recompensas' => Recompensa::orderBy('puntos_requeridos')->get(),
             'recompensasObtenidas' => $recompensasObtenidas,
             'proximaRecompensa' => $proximaRecompensa,

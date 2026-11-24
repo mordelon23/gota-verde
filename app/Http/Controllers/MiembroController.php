@@ -73,8 +73,11 @@ class MiembroController extends Controller
         }
 
         $vivienda->usuarios()->detach($request->user()->id);
-        $request->session()->forget('vivienda_activa_id');
+        if ((int) $request->session()->get('vivienda_activa_id') === $vivienda->id) {
+            $request->session()->forget('vivienda_activa_id');
+        }
 
-        return redirect()->route('viviendas.index')->with('exito', 'Saliste de '.$vivienda->alias.'.');
+        return redirect()->away(route('viviendas.index', absolute: false), 303)
+            ->with('exito', 'Ya no perteneces a la vivienda «'.$vivienda->alias.'».');
     }
 }

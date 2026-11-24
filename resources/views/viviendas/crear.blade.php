@@ -35,13 +35,14 @@
             <div class="sm:col-span-2">
                 <label for="tarifa_m3" class="mb-2 block text-sm font-semibold">Tarifa por m³ en pesos (opcional)</label>
                 <input id="tarifa_m3" name="tarifa_m3" type="number" min="0" max="10000" step="0.01" value="{{ old('tarifa_m3') }}" placeholder="Ejemplo: 20.00" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-[#2E7D6B] focus:outline-none">
-                <p class="mt-2 text-xs leading-5 text-slate-500">¿No conoces tu tarifa? <button type="button" class="gv-link" onclick="document.getElementById('tarifa_m3').value='{{ number_format($tarifaSugerida, 2, '.', '') }}'">Usar valor de referencia (${{ number_format($tarifaSugerida, 2) }}/m³)</button>. Puedes cambiarlo después. Los resultados monetarios son orientativos.</p>
+                <p class="mt-2 text-xs leading-5 text-slate-500">Puedes cambiarlo después. Los resultados monetarios son orientativos.</p>
+                <div class="gv-actions"><button type="button" class="gv-link" onclick="document.getElementById('tarifa_m3').value='{{ number_format($tarifaSugerida, 2, '.', '') }}'">Usar valor de referencia (${{ number_format($tarifaSugerida, 2) }}/m³)</button></div>
             </div>
-            <div class="sm:col-span-2">
-                <button type="submit" class="gv-btn w-full">Guardar vivienda</button>
+            <div class="sm:col-span-2 gv-actions gv-actions-between">
+                <a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a>
+                <button type="submit" class="gv-btn gv-right">Guardar vivienda</button>
             </div>
         </form>
-        <div class="gv-return"><a class="gv-btn alt" href="{{ route('dashboard') }}">Volver al inicio</a></div>
     </section>
     @include('partials.recompensas')
 </div>

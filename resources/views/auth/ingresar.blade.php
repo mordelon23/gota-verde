@@ -6,5 +6,5 @@
 <div class="gv-field"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" required value="{{ old('email') }}"></div>
 <div class="gv-field"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
 <div class="gv-auth-links"><label><input type="checkbox" name="remember" value="1" @checked(old('remember'))> Recordarme</label><a href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a></div>
-<button class="gv-btn" type="submit">Entrar</button></form><p class="gv-auth-bottom">¿No tienes cuenta? <a href="{{ route('register') }}"><strong>Regístrate</strong></a></p>
+<div class="gv-actions"><button class="gv-btn" type="submit">Entrar</button></div></form><p class="gv-auth-bottom">¿No tienes cuenta? <a href="{{ route('register') }}"><strong>Regístrate</strong></a></p>
 @endsection

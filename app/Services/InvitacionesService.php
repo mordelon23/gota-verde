@@ -42,6 +42,10 @@ class InvitacionesService
                 throw ValidationException::withMessages(['email' => 'Esa persona ya es miembro de la vivienda.']);
             }
 
+            if (! User::query()->whereRaw('LOWER(email) = ?', [$email])->exists()) {
+                throw ValidationException::withMessages(['email' => 'No encontramos una cuenta registrada con ese correo. Pídele a la persona que cree su cuenta antes de invitarla.']);
+            }
+
             // Una invitación nueva reemplaza a la pendiente anterior para el mismo correo.
             $vivienda->invitaciones()
                 ->where('email', $email)

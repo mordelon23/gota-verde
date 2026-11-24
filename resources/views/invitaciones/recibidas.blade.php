@@ -19,7 +19,7 @@
                     <p>{{ $pendiente->anfitrion->name }} te invitó a unirte a esta vivienda.</p>
                     <p class="gv-note">Vence el {{ $pendiente->expira_en->format('d/m/Y') }} a las {{ $pendiente->expira_en->format('H:i') }}.</p>
                 </div>
-                <form method="POST" action="{{ route('invitaciones.recibidas.aceptar', $pendiente->id) }}">
+                <form class="gv-right" method="POST" action="{{ route('invitaciones.recibidas.aceptar', $pendiente->id) }}">
                     @csrf
                     <button class="gv-btn" type="submit">Aceptar invitación</button>
                 </form>
@@ -36,7 +36,7 @@
                     <label for="enlace">Pega el enlace de invitación</label>
                     <input id="enlace" name="enlace" type="text" inputmode="url" maxlength="2048" required autocomplete="off" value="{{ old('enlace') }}">
                 </div>
-                <button class="gv-btn alt" type="submit">Abrir invitación</button>
+                <div class="gv-actions"><button class="gv-btn alt" type="submit">Abrir invitación</button></div>
             </form>
         </section>
     </div>
