@@ -148,6 +148,19 @@ Abre en el navegador:
 
 Deja abierta la terminal mientras trabajas. Para detener los procesos, utiliza `Ctrl + C`.
 
+### Configurar la carga de fotos de viviendas
+
+En el `php.ini` del PHP que atiende las solicitudes web, configura `file_uploads = On`,
+`upload_max_filesize = 5M` y `post_max_size = 8M`. Reinicia ese servidor después de guardar los cambios.
+Puedes consultar `php --ini` como punto de partida si ejecutas el servidor con `php artisan serve`.
+Si utilizas otro servidor o tienes varias versiones de PHP, verifica el archivo y los valores efectivos en el entorno web.
+
+PHP necesita una carpeta temporal escribible por su proceso. Si la carpeta temporal del sistema no está disponible para ese proceso,
+crea una carpeta privada local y configura su ruta absoluta en `upload_tmp_dir`. En Windows puedes crearla dentro del perfil
+del usuario que ejecuta PHP. La ruta depende de cada equipo y se configura en PHP.
+Laravel guarda las fotos de viviendas en el disco privado `local`, dentro de `storage/app/private/fotos-viviendas`.
+El proceso de PHP también debe poder escribir en ese almacenamiento privado.
+
 > Los comandos se ejecutan \*\*dentro de la carpeta del proyecto\*\*, donde están `artisan`, `composer.json` y `package.json`.
 
 ## 5\. Cómo se creó el proyecto originalmente

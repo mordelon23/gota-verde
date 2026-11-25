@@ -23,7 +23,8 @@ class MetasService
     {
         $registros = RegistroHabito::query()
             ->where('vivienda_id', $meta->vivienda_id)
-            ->whereBetween('fecha', [$meta->fecha_inicio->toDateString(), $meta->fecha_fin->toDateString()])
+            ->where('fecha', '>=', $meta->fecha_inicio->toDateString())
+            ->where('fecha', '<', $meta->fecha_fin->copy()->addDay()->toDateString())
             ->when($meta->actividad_id, fn ($consulta) => $consulta->where('actividad_id', $meta->actividad_id));
 
         if ($meta->tipo === Meta::CUANTITATIVA) {

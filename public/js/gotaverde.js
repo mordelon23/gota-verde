@@ -109,32 +109,117 @@ document.querySelector('[data-copiar-invitacion]')?.addEventListener('click', as
     }
 });
 
-avisos.querySelectorAll('[data-cerrar-aviso]').forEach((boton) => {
-    boton.hidden = false;
-    boton.addEventListener('click', () => {
-        boton.closest('.gv-alert').hidden = true;
+function prepararAviso(aviso) {
+    const boton = aviso.querySelector('[data-cerrar-aviso]');
+    const duracion = 5000;
+    const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let restante = duracion;
+    let temporizador;
+    let vence;
+    let desvanecimiento;
+    let cursorDentro = window.matchMedia('(any-hover: hover)').matches && aviso.matches(':hover');
+    let focoDentro = aviso.contains(document.activeElement);
+
+    const pausar = () => {
+        if (temporizador === undefined) return;
+
+        clearTimeout(temporizador);
+        temporizador = undefined;
+        restante = Math.max(0, vence - performance.now());
+    };
+
+    const ocultar = () => {
+        pausar();
+        aviso.hidden = true;
+        desvanecimiento?.cancel();
+        desvanecimiento = undefined;
+    };
+
+    const cerrar = () => {
+        if (aviso.hidden || desvanecimiento) return;
+
+        pausar();
+        if (movimientoReducido.matches || typeof aviso.animate !== 'function') {
+            ocultar();
+            return;
+        }
+
+        desvanecimiento = aviso.animate([{ opacity: 1 }, { opacity: 0 }], {
+            duration: 280,
+            easing: 'ease-out',
+            fill: 'forwards',
+        });
+        desvanecimiento.onfinish = ocultar;
+    };
+
+    const reanudar = () => {
+        if (aviso.hidden || desvanecimiento || cursorDentro || focoDentro || temporizador !== undefined) return;
+
+        vence = performance.now() + restante;
+        temporizador = setTimeout(cerrar, restante);
+    };
+
+    aviso.addEventListener('pointerenter', (evento) => {
+        if (evento.pointerType === 'touch') return;
+
+        cursorDentro = true;
+        pausar();
     });
+    aviso.addEventListener('pointerleave', (evento) => {
+        if (evento.pointerType === 'touch') return;
+
+        cursorDentro = false;
+        reanudar();
+    });
+    aviso.addEventListener('focusin', () => {
+        focoDentro = true;
+        pausar();
+    });
+    aviso.addEventListener('focusout', (evento) => {
+        focoDentro = aviso.contains(evento.relatedTarget);
+        reanudar();
+    });
+    boton.hidden = false;
+    boton.addEventListener('click', cerrar);
+    reanudar();
+
+    return {
+        mostrar() {
+            ocultar();
+            restante = duracion;
+            aviso.hidden = false;
+            cursorDentro = window.matchMedia('(any-hover: hover)').matches && aviso.matches(':hover');
+            focoDentro = aviso.contains(document.activeElement);
+            reanudar();
+        },
+        ocultar,
+    };
+}
+
+const validacionLocal = prepararAviso(avisoLocal);
+avisos.querySelectorAll('[data-aviso-temporal]').forEach((aviso) => {
+    if (aviso !== avisoLocal) prepararAviso(aviso);
 });
 
 document.addEventListener('invalid', (evento) => {
     if (mostrandoError) return;
 
     mostrandoError = true;
-    avisoLocal.hidden = false;
     const etiqueta = evento.target.labels?.[0]?.textContent.trim();
     mensajeLocal.textContent = [etiqueta, evento.target.validationMessage].filter(Boolean).join(' · ');
+    validacionLocal.mostrar();
     setTimeout(() => { mostrandoError = false; }, 0);
 }, true);
 
 document.addEventListener('input', () => {
-    avisoLocal.hidden = true;
+    validacionLocal.ocultar();
 });
 
 window.addEventListener('pageshow', (evento) => {
     const navegacion = performance.getEntriesByType('navigation')[0];
     if (!evento.persisted && navegacion?.type !== 'back_forward') return;
 
-    avisoLocal.hidden = true;
+    validacionLocal.ocultar();
     if (avisos.hasAttribute('data-errores-del-servidor')) return;
 
     setTimeout(() => {

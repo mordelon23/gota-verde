@@ -4,7 +4,7 @@
         @foreach($recompensas as $recompensa)
             <details class="gv-card gv-promotion">
                 <summary>
-                    <span aria-hidden="true">{{ $recompensa->icono }}</span>
+                    @include('partials.badge-icon', ['badgeKey' => $recompensa->clave])
                     <span>
                         @if(isset($empresas[$recompensa->clave]))
                             <small>{{ $empresas[$recompensa->clave] }}</small>

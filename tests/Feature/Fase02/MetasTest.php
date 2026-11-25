@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Actividad;
 use App\Models\Meta;
 use App\Models\Racha;
+use App\Models\RegistroHabito;
 use App\Models\User;
 use Database\Seeders\GamificacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,6 +56,87 @@ it('mide una meta cualitativa por días que respetan el límite', function (): v
 
     // Cumplen 2 de 4 días (el de 9 minutos no cuenta).
     expect((float) Meta::sole()->progreso)->toBe(50.0);
+});
+
+it('completa una meta de un día al ahorrar 16 litros en un hábito guardado con hora', function (): void {
+    $usuario = User::factory()->create();
+    $vivienda = viviendaDe($usuario);
+    $trastes = Actividad::create([
+        'clave' => 'lavado_trastes', 'nombre' => 'Lavar trastes', 'unidad' => 'minuto',
+        'litros_por_unidad' => 8, 'referencia_eficiente' => 5, 'activa' => true,
+    ]);
+    $fecha = today()->toDateString();
+
+    $this->actingAs($usuario)->post(route('metas.store'), [
+        'tipo' => 'cuantitativa', 'titulo' => 'ahorrar 1 litro', 'actividad_id' => $trastes->id,
+        'objetivo_litros' => 1, 'fecha_inicio' => $fecha, 'duracion_dias' => 1,
+    ])->assertRedirect(route('metas.index'));
+
+    $this->post(route('habitos.store'), [
+        'actividad_id' => $trastes->id, 'cantidad' => 3, 'fecha' => $fecha,
+    ])->assertSessionHas('gamificacion', fn (array $aviso): bool => $aviso['metas'] === ['ahorrar 1 litro']);
+
+    $habito = $vivienda->registros()->sole();
+    expect((float) $habito->litros_ahorrados)->toBe(16.0);
+    if ($habito->getConnection()->getDriverName() === 'sqlite') {
+        expect($habito->getRawOriginal('fecha'))->toBe($fecha.' 00:00:00');
+    }
+
+    $meta = $vivienda->metas()->sole();
+    expect((float) $meta->progreso)->toBe(100.0)
+        ->and($meta->estado)->toBe('cumplida')
+        ->and($meta->cumplida_en)->not->toBeNull();
+});
+
+it('completa una meta cualitativa con un hábito válido en cada extremo del periodo', function (): void {
+    $usuario = User::factory()->create();
+    $vivienda = viviendaDe($usuario);
+    $ducha = ducha();
+    $inicio = today()->subDay()->toDateString();
+    $fin = today()->toDateString();
+
+    $this->actingAs($usuario)->post(route('metas.store'), [
+        'tipo' => 'cualitativa', 'titulo' => 'Duchas de máximo cinco minutos', 'actividad_id' => $ducha->id,
+        'limite_cantidad' => 5, 'fecha_inicio' => $inicio, 'duracion_dias' => 2,
+    ])->assertRedirect(route('metas.index'));
+
+    $this->post(route('habitos.store'), ['actividad_id' => $ducha->id, 'cantidad' => 4, 'fecha' => $inicio])
+        ->assertSessionHasNoErrors();
+    expect((float) $vivienda->metas()->sole()->progreso)->toBe(50.0);
+
+    $this->post(route('habitos.store'), ['actividad_id' => $ducha->id, 'cantidad' => 5, 'fecha' => $fin])
+        ->assertSessionHasNoErrors();
+    $meta = $vivienda->metas()->sole();
+    expect((float) $meta->progreso)->toBe(100.0)->and($meta->estado)->toBe('cumplida');
+});
+
+it('suma los extremos de una meta de varios días y excluye hábitos anteriores y posteriores', function (): void {
+    $usuario = User::factory()->create();
+    $vivienda = viviendaDe($usuario);
+    $ducha = ducha();
+    $inicio = today()->subDays(2);
+    $fin = today();
+
+    $this->actingAs($usuario)->post(route('metas.store'), [
+        'tipo' => 'cuantitativa', 'titulo' => 'Ahorro durante tres días', 'actividad_id' => $ducha->id,
+        'objetivo_litros' => 100, 'fecha_inicio' => $inicio->toDateString(), 'duracion_dias' => 3,
+    ])->assertRedirect(route('metas.index'));
+
+    foreach ([
+        [$inicio->copy()->subDay()->endOfDay(), 70],
+        [$inicio, 20],
+        [$fin->copy()->endOfDay(), 30],
+        [$fin->copy()->addDay(), 80],
+    ] as [$fecha, $ahorro]) {
+        RegistroHabito::create([
+            'user_id' => $usuario->id, 'vivienda_id' => $vivienda->id, 'actividad_id' => $ducha->id,
+            'fecha' => $fecha, 'cantidad' => 1, 'litros_consumidos' => 10, 'litros_ahorrados' => $ahorro,
+        ]);
+    }
+
+    $this->get(route('metas.index'))->assertOk();
+    $meta = $vivienda->metas()->sole();
+    expect((float) $meta->progreso)->toBe(50.0)->and($meta->estado)->toBe('activa');
 });
 
 it('no permite dos metas activas iguales ni fechas inválidas (CU-10)', function (): void {

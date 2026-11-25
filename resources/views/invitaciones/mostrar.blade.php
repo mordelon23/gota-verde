@@ -1,6 +1,7 @@
 @extends('layouts.auth')
 @section('titulo','Invitación')
 @section('contenido')
+<div class="gv-auth-accent">@include('partials.icon', ['icon' => 'mail'])</div>
 <h1>Invitación a una vivienda</h1>
 <p class="gv-sub"><strong>{{ $invitacion->anfitrion->name }}</strong> te invitó a unirte a <strong>{{ $invitacion->vivienda->alias }}</strong> en GotaVerde.</p>
 @if(! $invitacion->estaVigente())

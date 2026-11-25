@@ -1,1 +1,7 @@
-<a class="gv-brand" href="{{ route('inicio') }}"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="white"/><path d="M24 8C19 16 12 22 12 29a12 12 0 0 0 24 0c0-7-7-13-12-21Z" fill="#2E7D6B"/><path d="M17 31c0-9 6-13 15-14-1 9-5 15-15 14Zm0 0 11-9" fill="#b5dca2" stroke="#fff" stroke-width="1.5"/></svg>GotaVerde</a>
+<a class="gv-brand" href="{{ route('inicio') }}" aria-label="GotaVerde">
+    <svg viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+        <path d="M20 3C15 11 8 18 8 25a12 12 0 1 0 24 0C32 18 25 11 20 3Z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M20 35c0-8 3-13 10-16-1 9-4 14-10 16Zm0 0c-5-2-8-6-8-12 5 2 8 6 8 12Z" fill="#879368"/>
+    </svg>
+    <span>GotaVerde</span>
+</a>

@@ -5,14 +5,16 @@
 @section('contenido')
 @php($usuario = auth()->user())
 <div class="gv-profile">
-    <header class="gv-header"><h1>Mi perfil</h1></header>
+    @include('partials.screen-heading', ['simbolo' => 'people', 'encabezado' => 'Mi perfil', 'detalle' => 'Gestiona tu nombre visible y tu foto de perfil.'])
 
-    <section class="gv-card">
-        <div class="gv-row gv-profile-heading">
+    <div class="gv-profile-layout">
+    <section class="gv-card gv-form-panel">
+        <div class="gv-row gv-profile-heading gv-profile-cover">
             @include('partials.avatar', ['usuario' => $usuario, 'claseAvatar' => 'gv-avatar-lg'])
             <div>
                 <h2>{{ $usuario->name }}</h2>
                 <p class="gv-label">{{ $usuario->email }}</p>
+                <p class="gv-tag">Nivel {{ $usuario->nivel() }} · {{ $usuario->puntos }} puntos</p>
             </div>
         </div>
 
@@ -48,9 +50,12 @@
     </section>
 
     <section class="gv-card gv-profile-help">
-        <h2>Ayuda para empezar</h2>
+        <h2>@include('partials.icon', ['icon' => 'list']) Ayuda para empezar</h2>
+        <p class="gv-note">Consulta la guía o revisa tu nivel, rachas y medallas.</p>
+        <p class="gv-note"><a href="{{ route('logros.index') }}">Ver logros y rachas</a></p>
         <div class="gv-actions"><button class="gv-btn alt" type="button" data-abrir-guia aria-controls="guia-primer-uso" aria-haspopup="dialog">Ver guía de inicio</button></div>
     </section>
+    </div>
 </div>
 @include('partials.guia-primer-uso', ['mostrarAlEntrar' => false])
 @endsection

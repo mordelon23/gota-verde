@@ -3,6 +3,7 @@
 // Mensajes de validación en español. Se activan con APP_LOCALE=es en el .env.
 // Las reglas que no aparezcan aquí usan el mensaje en inglés de Laravel.
 return [
+    'uploaded' => 'No se pudo cargar el archivo del campo :attribute. Inténtalo nuevamente.',
     'after_or_equal' => 'El campo :attribute debe ser una fecha posterior o igual a :date.',
     'alpha_dash' => 'El campo :attribute solo puede tener letras, números, guiones y guiones bajos.',
     'before_or_equal' => 'El campo :attribute debe ser una fecha anterior o igual a :date.',

@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/viviendas/crear', [ViviendaController::class, 'create'])->name('viviendas.create');
     Route::post('/viviendas', [ViviendaController::class, 'store'])->name('viviendas.store');
     Route::get('/viviendas/{vivienda}/editar', [ViviendaController::class, 'edit'])->name('viviendas.edit');
+    Route::get('/viviendas/{vivienda}/foto', [ViviendaController::class, 'foto'])->name('viviendas.foto');
     Route::put('/viviendas/{vivienda}', [ViviendaController::class, 'update'])->name('viviendas.update');
     Route::delete('/viviendas/{vivienda}', [ViviendaController::class, 'destroy'])->name('viviendas.destroy');
     Route::post('/viviendas/{vivienda}/seleccionar', [ViviendaController::class, 'seleccionar'])->name('viviendas.seleccionar');

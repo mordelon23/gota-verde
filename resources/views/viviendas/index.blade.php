@@ -1,12 +1,38 @@
 @extends('layouts.app')
 @section('titulo','Mis viviendas')
 @section('contenido')
-<header class="gv-header"><div><h1>Mis viviendas</h1><p class="gv-sub">Administra tus propiedades, su tarifa y quién participa en cada una.</p></div><a class="gv-btn" href="{{ route('viviendas.create') }}">+ Registrar vivienda</a></header>
-<div class="gv-columns" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))">
-<section aria-label="Viviendas disponibles">@forelse($viviendas as $item)<form method="POST" action="{{ route('viviendas.seleccionar',$item) }}">@csrf<input type="hidden" name="destino" value="viviendas"><button class="gv-house {{ $vivienda?->id === $item->id ? 'active' : '' }}"><div class="gv-header" style="margin:0 0 6px"><strong>{{ $item->alias }}</strong><span class="gv-tag">{{ ucfirst($roles[$item->id] ?? 'miembro') }}{{ $vivienda?->id === $item->id ? ' · activa' : '' }}</span></div><p class="gv-label">{{ $item->tipo }} · {{ $item->habitantes }} habitantes · {{ $item->alcaldia }} · C.P. {{ $item->codigo_postal }} · ${{ number_format((float)$item->tarifa_m3,2) }}/m³</p></button></form>@empty<div class="gv-card">Todavía no tienes viviendas.</div>@endforelse</section>
+<header class="gv-header gv-botanical-heading">
+@include('partials.artwork', ['recurso' => 'rama', 'claseIlustracion' => 'gv-botanical-art gv-art-houses'])
+<div><h1>Mis viviendas</h1><p class="gv-sub">Administra tus propiedades, su tarifa y quién participa en cada una.</p></div><a class="gv-btn" href="{{ route('viviendas.create') }}">@include('partials.icon', ['icon' => 'plus']) Agregar vivienda</a></header>
+<div class="gv-house-directory">
+<section class="gv-house-list" aria-label="Viviendas disponibles">
+@forelse($viviendas as $item)
+    <article class="gv-house-item {{ $vivienda?->id === $item->id ? 'active' : '' }}">
+        @include('partials.home-photo', ['hogar' => $item])
+        <div>
+            <h2>{{ $item->alias }}</h2>
+            <p>{{ $item->tipo }} · {{ $item->habitantes }} habitantes</p>
+            <p class="gv-label">{{ $item->alcaldia }} · C.P. {{ $item->codigo_postal }} · ${{ number_format((float)$item->tarifa_m3,2) }}/m³</p>
+            <p class="gv-label">{{ ucfirst($roles[$item->id] ?? 'miembro') }}</p>
+        </div>
+        <form method="POST" action="{{ route('viviendas.seleccionar',$item) }}">
+            @csrf
+            <input type="hidden" name="destino" value="viviendas">
+            <button class="gv-btn {{ $vivienda?->id === $item->id ? '' : 'alt' }}" type="submit" aria-pressed="{{ $vivienda?->id === $item->id ? 'true' : 'false' }}">
+                {{ $vivienda?->id === $item->id ? 'Seleccionada' : 'Seleccionar' }}
+            </button>
+        </form>
+    </article>
+@empty
+    <div class="gv-card gv-house-empty">@include('partials.home-photo', ['hogar' => null]) <div><h2>Todavía no tienes viviendas.</h2><a href="{{ route('viviendas.create') }}">Registrar vivienda</a></div></div>
+@endforelse
+</section>
 @if($vivienda)
-<section class="gv-card"><div class="gv-header" style="margin-bottom:10px"><h2 style="margin:0">Miembros de {{ $vivienda->alias }}</h2>@if($esPropietario)<a class="gv-btn sm alt" href="{{ route('viviendas.edit',$vivienda) }}">Editar vivienda</a>@endif</div>
-<div class="gv-scroll"><table class="gv-table"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th></th></tr></thead><tbody>@foreach($miembros as $miembro)<tr><td>{{ $miembro->name }}{{ $miembro->is(auth()->user()) ? ' (tú)' : '' }}</td><td>{{ $miembro->email }}</td><td>{{ ucfirst($miembro->pivot->rol) }}</td><td>@if($esPropietario && ! $miembro->is(auth()->user()) && $miembro->pivot->rol !== 'propietario')<form class="gv-inline" method="POST" action="{{ route('viviendas.miembros.eliminar',[$vivienda,$miembro]) }}" data-confirmar="¿Quitar el acceso a {{ $miembro->name }}?" onsubmit="return confirm(this.dataset.confirmar)">@csrf @method('DELETE')<button class="gv-link danger">Eliminar</button></form>@endif</td></tr>@endforeach</tbody></table></div>
+<section class="gv-card gv-member-panel"><div class="gv-header"><div class="gv-home-inline">@include('partials.home-photo', ['hogar' => $vivienda])<div><h2>Miembros de {{ $vivienda->alias }}</h2><p class="gv-label">{{ $miembros->count() }} {{ $miembros->count() === 1 ? 'integrante' : 'integrantes' }}</p></div></div>@if($esPropietario)<a class="gv-btn sm alt" href="{{ route('viviendas.edit',$vivienda) }}">Editar vivienda</a>@endif</div>
+<ul class="gv-member-list">@foreach($miembros as $miembro)<li class="gv-member-row">
+@include('partials.avatar', ['usuario' => $miembro, 'mostrarFoto' => $miembro->is(auth()->user())])
+<div><strong>{{ $miembro->name }}{{ $miembro->is(auth()->user()) ? ' (tú)' : '' }}</strong><p class="gv-label">{{ $miembro->email }}</p></div>
+<span class="gv-tag">{{ ucfirst($miembro->pivot->rol) }}</span><div class="gv-actions">@if($esPropietario && ! $miembro->is(auth()->user()) && $miembro->pivot->rol !== 'propietario')<form class="gv-inline" method="POST" action="{{ route('viviendas.miembros.eliminar',[$vivienda,$miembro]) }}" data-confirmar="¿Quitar el acceso a {{ $miembro->name }}?" onsubmit="return confirm(this.dataset.confirmar)">@csrf @method('DELETE')<button class="gv-link danger">Eliminar</button></form>@endif</div></li>@endforeach</ul>
 @if($esPropietario)
 <h2 style="margin-top:18px">Invitar a un miembro</h2>
 <p class="gv-label" style="margin-bottom:10px">Ingresa el correo registrado de la persona. Podrá aceptar desde <strong>Invitaciones</strong> al iniciar sesión.</p>

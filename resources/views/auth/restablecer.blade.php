@@ -1,6 +1,7 @@
 @extends('layouts.auth')
 @section('titulo','Nueva contraseña')
 @section('contenido')
+<div class="gv-auth-accent">@include('partials.icon', ['icon' => 'shield'])</div>
 <h1>Nueva contraseña</h1><p class="gv-sub">Elige una contraseña de al menos 8 caracteres.</p>
 <form method="POST" action="{{ route('password.update') }}">@csrf<input type="hidden" name="token" value="{{ $token }}">
 <div class="gv-field"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" required value="{{ old('email', $email) }}"></div>
