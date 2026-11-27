@@ -95,6 +95,7 @@
 </div>
 
 <dialog class="gv-meta-dialog" id="nueva-meta" aria-labelledby="titulo-nueva-meta" aria-describedby="descripcion-nueva-meta" @if($hayErroresDeMeta) data-reabrir-meta @endif>
+    <div class="gv-meta-dialog-content">
     <header class="gv-meta-editor-heading">
         <div>
             <h2 id="titulo-nueva-meta">Registrar meta</h2>
@@ -158,6 +159,7 @@
 <p class="gv-note" data-solo="cualitativa">Un día cuenta si alguien registra la actividad y todos los registros del día respetan el límite.</p>
 
         </div>
+    </div>
     </div>
 </dialog>
 <script src="{{ asset('js/metas-interfaz.js') }}?v={{ filemtime(public_path('js/metas-interfaz.js')) }}" defer></script>

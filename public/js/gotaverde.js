@@ -1,6 +1,12 @@
 const avisos = document.querySelector('.gv-notifications');
-const avisoLocal = avisos.querySelector('[data-validacion-local]');
-const mensajeLocal = avisoLocal.querySelector('[role="alert"]');
+const plantillaAvisoLocal = avisos.querySelector('[data-validacion-local]');
+plantillaAvisoLocal.remove();
+const avisosActivos = new Map();
+const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
+const admiteCursor = window.matchMedia('(any-hover: hover)');
+const navegacionMovil = document.querySelector('.gv-mobile-nav');
+const dialogoMetas = document.querySelector('.gv-meta-dialog');
+let avisoLocal;
 let mostrandoError = false;
 
 const formularioPerfil = document.querySelector('[data-formulario-perfil]');
@@ -111,14 +117,22 @@ document.querySelector('[data-copiar-invitacion]')?.addEventListener('click', as
 
 function prepararAviso(aviso) {
     const boton = aviso.querySelector('[data-cerrar-aviso]');
-    const duracion = 5000;
-    const movimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let restante = duracion;
+    const contenido = aviso.querySelector('.gv-toast-copy');
+    const eventos = new AbortController();
+    const opciones = { signal: eventos.signal };
+    let restante = 5000;
     let temporizador;
     let vence;
-    let desvanecimiento;
-    let cursorDentro = window.matchMedia('(any-hover: hover)').matches && aviso.matches(':hover');
-    let focoDentro = aviso.contains(document.activeElement);
+    let fase = 'espera';
+    let cursorDentro = false;
+    let focoDentro = false;
+
+    const alTerminar = (clase, callback) => {
+        aviso.classList.add(clase);
+        const animacion = aviso.getAnimations?.().find((efecto) => efecto.animationName);
+        if (animacion) animacion.finished.then(callback, () => {});
+        else callback();
+    };
 
     const pausar = () => {
         if (temporizador === undefined) return;
@@ -129,31 +143,42 @@ function prepararAviso(aviso) {
     };
 
     const ocultar = () => {
+        if (fase === 'eliminado') return;
+
         pausar();
-        aviso.hidden = true;
-        desvanecimiento?.cancel();
-        desvanecimiento = undefined;
+        fase = 'eliminado';
+        const posiciones = new Map([...avisosActivos.keys()]
+            .filter((otro) => otro !== aviso && !otro.hidden && !otro.classList.contains('is-entering'))
+            .map((otro) => [otro, otro.getBoundingClientRect().top]));
+        eventos.abort();
+        avisosActivos.delete(aviso);
+        aviso.remove();
+        distribuirAvisos();
+
+        if (movimientoReducido.matches) return;
+        posiciones.forEach((anterior, otro) => {
+            if (otro.hidden) return;
+
+            const distancia = anterior - otro.getBoundingClientRect().top;
+            if (distancia) otro.animate?.([{ translate: `0 ${distancia}px` }, { translate: '0 0' }], {
+                duration: 200,
+                easing: 'ease-out',
+            });
+        });
     };
 
     const cerrar = () => {
-        if (aviso.hidden || desvanecimiento) return;
+        if (fase === 'salida' || fase === 'eliminado' || aviso.hidden) return;
 
         pausar();
-        if (movimientoReducido.matches || typeof aviso.animate !== 'function') {
-            ocultar();
-            return;
-        }
-
-        desvanecimiento = aviso.animate([{ opacity: 1 }, { opacity: 0 }], {
-            duration: 280,
-            easing: 'ease-out',
-            fill: 'forwards',
-        });
-        desvanecimiento.onfinish = ocultar;
+        fase = 'salida';
+        aviso.classList.remove('is-entering');
+        boton.disabled = true;
+        alTerminar('is-leaving', ocultar);
     };
 
     const reanudar = () => {
-        if (aviso.hidden || desvanecimiento || cursorDentro || focoDentro || temporizador !== undefined) return;
+        if (aviso.hidden || fase !== 'visible' || cursorDentro || focoDentro || temporizador !== undefined) return;
 
         vence = performance.now() + restante;
         temporizador = setTimeout(cerrar, restante);
@@ -164,62 +189,136 @@ function prepararAviso(aviso) {
 
         cursorDentro = true;
         pausar();
-    });
+    }, opciones);
     aviso.addEventListener('pointerleave', (evento) => {
         if (evento.pointerType === 'touch') return;
 
         cursorDentro = false;
         reanudar();
-    });
+    }, opciones);
     aviso.addEventListener('focusin', () => {
         focoDentro = true;
         pausar();
-    });
+    }, opciones);
     aviso.addEventListener('focusout', (evento) => {
         focoDentro = aviso.contains(evento.relatedTarget);
         reanudar();
-    });
+    }, opciones);
     boton.hidden = false;
-    boton.addEventListener('click', cerrar);
-    reanudar();
+    boton.addEventListener('click', cerrar, opciones);
 
-    return {
+    const control = {
+        get enSalida() { return fase === 'salida'; },
         mostrar() {
-            ocultar();
-            restante = duracion;
-            aviso.hidden = false;
-            cursorDentro = window.matchMedia('(any-hover: hover)').matches && aviso.matches(':hover');
+            contenido.tabIndex = contenido.scrollHeight > contenido.clientHeight ? 0 : -1;
+            cursorDentro = admiteCursor.matches && aviso.matches(':hover');
             focoDentro = aviso.contains(document.activeElement);
-            reanudar();
+
+            if (fase !== 'espera') {
+                reanudar();
+                return;
+            }
+
+            fase = 'entrada';
+            alTerminar('is-entering', () => {
+                if (fase !== 'entrada') return;
+
+                aviso.classList.remove('is-entering');
+                fase = 'visible';
+                reanudar();
+            });
+        },
+        esperar() {
+            pausar();
+            aviso.hidden = true;
+            if (fase !== 'entrada') return;
+
+            aviso.classList.remove('is-entering');
+            fase = 'espera';
         },
         ocultar,
     };
+    avisosActivos.set(aviso, control);
+    return control;
 }
 
-const validacionLocal = prepararAviso(avisoLocal);
-avisos.querySelectorAll('[data-aviso-temporal]').forEach((aviso) => {
-    if (aviso !== avisoLocal) prepararAviso(aviso);
-});
+function distribuirAvisos() {
+    const alturaVentana = document.documentElement.clientHeight;
+    const barra = navegacionMovil?.getBoundingClientRect();
+    if (barra?.height) {
+        avisos.style.setProperty('--toast-bottom', `${Math.ceil(alturaVentana - barra.top + 10)}px`);
+    } else {
+        avisos.style.removeProperty('--toast-bottom');
+    }
+
+    const estilos = getComputedStyle(avisos);
+    const limite = Math.min(alturaVentana * .42, alturaVentana - parseFloat(estilos.bottom) - 12);
+    const separacion = parseFloat(estilos.rowGap);
+    let altura = 0;
+    let cola = Boolean(dialogoMetas?.open);
+
+    avisosActivos.forEach((control, aviso) => {
+        if (control.enSalida) {
+            altura += aviso.offsetHeight + separacion;
+            return;
+        }
+        if (cola) {
+            control.esperar();
+            return;
+        }
+
+        aviso.hidden = false;
+        const espacio = aviso.offsetHeight + separacion;
+        if (altura && altura + espacio - separacion > limite && !aviso.contains(document.activeElement)) {
+            cola = true;
+            control.esperar();
+            return;
+        }
+
+        control.mostrar();
+        altura += espacio;
+    });
+}
+
+avisos.querySelectorAll('[data-aviso-temporal]').forEach(prepararAviso);
+window.addEventListener('resize', distribuirAvisos);
+document.fonts?.ready.then(distribuirAvisos);
+if (navegacionMovil && typeof ResizeObserver === 'function') {
+    new ResizeObserver(distribuirAvisos).observe(navegacionMovil);
+}
+if (dialogoMetas) {
+    new MutationObserver(distribuirAvisos).observe(dialogoMetas, { attributeFilter: ['open'] });
+}
+distribuirAvisos();
+
+const ocultarAvisoLocal = () => {
+    avisoLocal?.ocultar();
+    avisoLocal = undefined;
+};
 
 document.addEventListener('invalid', (evento) => {
     if (mostrandoError) return;
 
     mostrandoError = true;
     const etiqueta = evento.target.labels?.[0]?.textContent.trim();
-    mensajeLocal.textContent = [etiqueta, evento.target.validationMessage].filter(Boolean).join(' · ');
-    validacionLocal.mostrar();
+    ocultarAvisoLocal();
+    const aviso = plantillaAvisoLocal.cloneNode(true);
+    aviso.querySelector('[data-aviso-mensaje]').textContent = [etiqueta, evento.target.validationMessage].filter(Boolean).join(' · ');
+    avisos.append(aviso);
+    avisoLocal = prepararAviso(aviso);
+    distribuirAvisos();
     setTimeout(() => { mostrandoError = false; }, 0);
 }, true);
 
 document.addEventListener('input', () => {
-    validacionLocal.ocultar();
+    ocultarAvisoLocal();
 });
 
 window.addEventListener('pageshow', (evento) => {
     const navegacion = performance.getEntriesByType('navigation')[0];
     if (!evento.persisted && navegacion?.type !== 'back_forward') return;
 
-    validacionLocal.ocultar();
+    ocultarAvisoLocal();
     if (avisos.hasAttribute('data-errores-del-servidor')) return;
 
     setTimeout(() => {
