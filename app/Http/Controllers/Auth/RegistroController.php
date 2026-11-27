@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -34,14 +33,16 @@ class RegistroController extends Controller
         ]);
 
         event(new Registered($usuario));
-        Auth::login($usuario);
-        $request->session()->regenerate();
-
-        if ($request->session()->has('url.intended')) {
-            return redirect()->intended(route('viviendas.create'))
-                ->with('exito', 'Tu cuenta se creó correctamente.');
+        if (! $request->session()->has('url.intended')) {
+            $request->session()->put([
+                'url.intended' => route('viviendas.create'),
+                'guia_primer_uso' => $usuario->id,
+            ]);
         }
 
-        return redirect()->route('viviendas.create')->with('guia_primer_uso', true);
+        return redirect()->route('login')
+            ->with('exito_titulo', 'Cuenta registrada correctamente')
+            ->with('exito', 'Ya puedes iniciar sesión con tu correo electrónico y contraseña.')
+            ->withInput(['email' => $usuario->email]);
     }
 }

@@ -6,7 +6,14 @@
 @foreach(['exito', 'advertencia', 'informacion'] as $tipoAviso)
 @if(session($tipoAviso))
     <div class="gv-alert" data-aviso-temporal>
-        <p role="status">{{ session($tipoAviso) }}</p>
+        @if($tipoAviso === 'exito' && session('exito_titulo'))
+            <div role="status">
+                <strong>{{ session('exito_titulo') }}</strong>
+                <p>{{ session($tipoAviso) }}</p>
+            </div>
+        @else
+            <p role="status">{{ session($tipoAviso) }}</p>
+        @endif
         <button type="button" data-cerrar-aviso aria-label="Cerrar notificación" hidden>×</button>
     </div>
 @endif

@@ -701,6 +701,7 @@ h2 { font-size: 1.15rem; letter-spacing: -.022em; }
 .gv-photo-upload { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; border: 1px dashed #aeb298; border-radius: 12px; }
 .gv-photo-preview { width: 100%; min-width: 0; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 9px; }
 .gv-photo-preview .gv-photo-large { position: absolute; inset: 0; display: grid; width: auto; height: auto; border-radius: inherit; }
+.gv-photo-preview:has(.gv-photo-draft:not([hidden])) .gv-photo-large { visibility: hidden; }
 .gv-photo-preview .gv-icon { width: 48px; height: 48px; }
 .gv-photo-input { display: flex; gap: 8px; align-items: center; cursor: pointer; color: var(--nav); }
 .gv-photo-input small { display: block; color: var(--muted); }
@@ -727,6 +728,9 @@ h2 { font-size: 1.15rem; letter-spacing: -.022em; }
 .gv-member-panel form .gv-select { max-width: 100%; }
 .gv-member-panel .gv-scroll { margin-top: 6px; }
 .gv-destructive { border-color: #eac4b9; }
+.gv-house-delete-dialog { width: 460px; overflow-wrap: anywhere; }
+.gv-house-delete-dialog .gv-house-delete-icon { width: 30px; height: 30px; color: #a43c2c; }
+.gv-house-delete-dialog form { margin-top: 16px; }
 .gv-invitation-layout, .gv-profile-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, 1fr); gap: 16px; align-items: start; }
 .gv-invitation-list-heading, .gv-invitation-status, .gv-invitation-sender { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .gv-invitation-list-heading { min-height: 36px; justify-content: space-between; }

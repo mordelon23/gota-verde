@@ -4,6 +4,7 @@ use App\Models\Actividad;
 use App\Models\User;
 use App\Models\Vivienda;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
@@ -11,17 +12,32 @@ it('GotaVerde protege el dashboard para usuarios autenticados', function (): voi
     $this->get(route('dashboard'))->assertRedirect(route('login'));
 });
 
-it('GotaVerde registra cuentas con contraseñas protegidas', function (): void {
+it('registra una cuenta sin iniciar sesión y permite ingresar manualmente', function (): void {
     $this->post(route('register.store'), [
         'name' => 'Persona Demo',
         'email' => 'demo@example.test',
         'password' => 'ClaveSegura123!',
         'password_confirmation' => 'ClaveSegura123!',
-    ])->assertRedirect(route('viviendas.create'))->assertSessionHas('guia_primer_uso', true);
+    ])->assertRedirect(route('login'))
+        ->assertSessionHas('_old_input', ['email' => 'demo@example.test']);
 
-    $this->assertAuthenticated();
-    $this->assertDatabaseHas('users', ['email' => 'demo@example.test']);
-    expect(User::where('email', 'demo@example.test')->first()->password)->not->toBe('ClaveSegura123!');
+    $this->assertGuest();
+    $usuario = User::where('email', 'demo@example.test')->sole();
+    expect(Hash::check('ClaveSegura123!', $usuario->password))->toBeTrue();
+
+    $login = $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('Cuenta registrada correctamente')
+        ->assertSee('Ya puedes iniciar sesión con tu correo electrónico y contraseña.')
+        ->assertSee('value="demo@example.test"', false)
+        ->assertDontSee('ClaveSegura123!');
+    expect($login->getContent())->toMatch('/<input\b(?=[^>]*\bid="password")(?![^>]*\bvalue=)[^>]*>/');
+
+    $this->post(route('login.store'), [
+        'email' => 'demo@example.test',
+        'password' => 'ClaveSegura123!',
+    ])->assertRedirect(route('viviendas.create'));
+    $this->assertAuthenticatedAs($usuario);
 
     $this->get(route('viviendas.create'))
         ->assertOk()
@@ -33,7 +49,7 @@ it('GotaVerde registra cuentas con contraseñas protegidas', function (): void {
         ->assertDontSee('Te damos la bienvenida a GotaVerde');
 });
 
-it('devuelve a la persona a su invitación al crear una cuenta', function (): void {
+it('devuelve a la persona a su invitación después de que inicia sesión manualmente', function (): void {
     $enlace = route('invitaciones.mostrar', 'token-de-prueba');
 
     $this->withSession(['url.intended' => $enlace])->post(route('register.store'), [
@@ -41,7 +57,31 @@ it('devuelve a la persona a su invitación al crear una cuenta', function (): vo
         'email' => 'invitada@example.test',
         'password' => 'ClaveSegura123!',
         'password_confirmation' => 'ClaveSegura123!',
-    ])->assertRedirect($enlace)->assertSessionMissing('guia_primer_uso');
+    ])->assertRedirect(route('login'))->assertSessionMissing('guia_primer_uso');
+    $this->assertGuest();
+
+    $this->post(route('login.store'), [
+        'email' => 'invitada@example.test',
+        'password' => 'ClaveSegura123!',
+    ])->assertRedirect($enlace);
+});
+
+it('regresa al registro con validación en español y sin conservar las contraseñas', function (): void {
+    $this->from(route('register'))->post(route('register.store'), [
+        'name' => 'Persona Demo',
+        'email' => 'demo@example.test',
+        'password' => 'ClaveSegura123!',
+        'password_confirmation' => 'OtraClave123!',
+    ])->assertRedirect(route('register'))
+        ->assertSessionHasErrors(['password' => 'La confirmación de contraseña no coincide.'])
+        ->assertSessionHas('_old_input', ['name' => 'Persona Demo', 'email' => 'demo@example.test']);
+
+    $this->assertGuest();
+    $this->assertDatabaseMissing('users', ['email' => 'demo@example.test']);
+    $this->get(route('register'))
+        ->assertOk()
+        ->assertSee('value="Persona Demo"', false)
+        ->assertSee('value="demo@example.test"', false);
 });
 
 it('GotaVerde crea una vivienda y asigna al creador como propietario', function (): void {

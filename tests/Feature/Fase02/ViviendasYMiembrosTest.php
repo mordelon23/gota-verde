@@ -238,14 +238,23 @@ it('el propietario elimina miembros y un miembro puede salir (RF-22)', function 
 
 it('elimina la vivienda solo al confirmar el alias', function (): void {
     $propietario = User::factory()->create();
-    $vivienda = viviendaDe($propietario, 'propietario', ['alias' => 'Depa']);
+    $vivienda = viviendaDe($propietario, 'propietario', ['alias' => 'Depa <Norte>']);
+    $otra = viviendaDe($propietario, 'propietario', ['alias' => 'Otra vivienda']);
+
+    $this->actingAs($propietario)->get(route('viviendas.edit', $vivienda))
+        ->assertOk()
+        ->assertSee('aria-haspopup="dialog"', false)
+        ->assertSee('¿Estás seguro de que deseas eliminar la vivienda «Depa <Norte>»? Esta acción no se puede deshacer.');
+    $this->assertModelExists($vivienda);
 
     $this->actingAs($propietario)->delete(route('viviendas.destroy', $vivienda), ['confirmacion' => 'otra'])
         ->assertSessionHasErrors('confirmacion');
-    $this->actingAs($propietario)->delete(route('viviendas.destroy', $vivienda), ['confirmacion' => 'Depa'])
-        ->assertRedirect(route('viviendas.index'));
+    $this->actingAs($propietario)->delete(route('viviendas.destroy', $vivienda), ['confirmacion' => $vivienda->alias])
+        ->assertRedirect(route('viviendas.index'))
+        ->assertSessionHas('exito', 'La vivienda se eliminó.');
 
     $this->assertModelMissing($vivienda);
+    $this->assertModelExists($otra);
 });
 
 

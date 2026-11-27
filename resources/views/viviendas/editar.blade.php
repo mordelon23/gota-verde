@@ -14,6 +14,27 @@
 <div class="gv-actions gv-actions-between wide"><a class="gv-btn alt" href="{{ route('viviendas.index') }}">Volver a mis viviendas</a><button class="gv-btn" type="submit">Guardar cambios</button></div>
 </div></form></section>
 <section class="gv-card gv-destructive"><h2>Eliminar vivienda</h2><p class="gv-label" style="margin-bottom:12px">Se borrarán sus hábitos, lecturas, metas y rachas. Esta acción no se puede deshacer.</p>
-<form method="POST" action="{{ route('viviendas.destroy',$vivienda) }}">@csrf @method('DELETE')<div class="gv-field"><label for="confirmacion">Escribe <strong>{{ $vivienda->alias }}</strong> para confirmar</label><input id="confirmacion" name="confirmacion" autocomplete="off" required></div><div class="gv-actions"><button class="gv-btn danger" type="submit">Eliminar definitivamente</button></div></form></section>
+<div class="gv-actions"><button class="gv-btn danger" type="button" data-abrir-eliminar-vivienda aria-haspopup="dialog" aria-controls="eliminar-vivienda">Eliminar definitivamente</button></div>
+<dialog id="eliminar-vivienda" class="gv-guide gv-house-delete-dialog" aria-labelledby="eliminar-vivienda-titulo" aria-describedby="eliminar-vivienda-mensaje">
+    <svg class="gv-icon gv-house-delete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10.3 4.5 2.6 18a1.6 1.6 0 0 0 1.4 2.4h16a1.6 1.6 0 0 0 1.4-2.4L13.7 4.5a2 2 0 0 0-3.4 0Z"/>
+        <path d="M12 9v4m0 3.5h.01"/>
+    </svg>
+    <h2 id="eliminar-vivienda-titulo">Eliminar vivienda</h2>
+    <p id="eliminar-vivienda-mensaje">¿Estás seguro de que deseas eliminar la vivienda «{{ $vivienda->alias }}»? Esta acción no se puede deshacer.</p>
+    <form method="POST" action="{{ route('viviendas.destroy', $vivienda) }}">
+        @csrf
+        @method('DELETE')
+        <div class="gv-field">
+            <label for="confirmacion">Escribe <strong>{{ $vivienda->alias }}</strong> para confirmar</label>
+            <input id="confirmacion" name="confirmacion" autocomplete="off" required>
+        </div>
+        <div class="gv-actions gv-actions-between">
+            <button class="gv-btn alt" type="button" data-cancelar-eliminar-vivienda autofocus>Cancelar</button>
+            <button class="gv-btn danger" type="submit">Eliminar vivienda</button>
+        </div>
+    </form>
+</dialog>
+</section>
 </div>
 @endsection

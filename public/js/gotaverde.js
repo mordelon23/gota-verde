@@ -275,6 +275,35 @@ if (guia && typeof guia.showModal === 'function') {
     });
 }
 
+const modalEliminarVivienda = document.getElementById('eliminar-vivienda');
+
+if (modalEliminarVivienda) {
+    const abrir = document.querySelector('[data-abrir-eliminar-vivienda]');
+    const cancelar = modalEliminarVivienda.querySelector('[data-cancelar-eliminar-vivienda]');
+    const formulario = modalEliminarVivienda.querySelector('form');
+    const confirmar = formulario.querySelector('button[type="submit"]');
+
+    abrir.addEventListener('click', () => modalEliminarVivienda.showModal());
+    cancelar.addEventListener('click', () => modalEliminarVivienda.close());
+    modalEliminarVivienda.addEventListener('close', () => {
+        if (!confirmar.disabled) formulario.reset();
+        abrir.focus();
+    });
+
+    formulario.addEventListener('submit', (evento) => {
+        if (!modalEliminarVivienda.open || confirmar.disabled || evento.submitter !== confirmar) {
+            evento.preventDefault();
+            return;
+        }
+
+        confirmar.disabled = true;
+    });
+
+    window.addEventListener('pageshow', (evento) => {
+        if (evento.persisted) confirmar.disabled = false;
+    });
+}
+
 const catalogoPostal = document.getElementById('catalogo-codigos-postales');
 
 if (catalogoPostal) {

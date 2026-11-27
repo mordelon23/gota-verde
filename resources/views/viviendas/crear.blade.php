@@ -3,7 +3,8 @@
 @section('titulo', 'Registrar vivienda')
 
 @section('contenido')
-@if(session('guia_primer_uso'))
+@if(session('guia_primer_uso') === auth()->id())
+    @php(session()->forget('guia_primer_uso'))
     @include('partials.guia-primer-uso', ['mostrarAlEntrar' => true])
 @endif
 <div class="gv-registration gv-house-registration">
